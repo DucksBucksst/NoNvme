@@ -1,21 +1,41 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient'; // Убедись, что этот файл есть
 
 export default function Home() {
-  const [username, setUsername] = useState('');
   const [tgUser, setTgUser] = useState(null);
 
   useEffect(() => {
-    if (window.Telegram.WebApp) {
-      window.Telegram.WebApp.expand(); // разворачивает WebApp
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.expand();
       const user = window.Telegram.WebApp.initDataUnsafe?.user;
+      console.log('TG USER:', user); // Добавили лог
       setTgUser(user);
+    } else {
+      console.warn('Telegram WebApp не инициализирован');
     }
   }, []);
 
-  const handleVote = (voteType) => {
-    console.log('Голос:', voteType);
-    console.log('Пользователь:', tgUser?.id, tgUser?.username || tgUser?.first_name);
-    // Тут можно отправить голос на backend
+  const handleVote = async (voteType) => {
+    if (!tgUser) {
+      alert('Пользователь Telegram не найден.');
+      return;
+    }
+
+    const { data, error } = await supabase.from('votes').insert([
+      {
+        telegram_id: tgUser.id.toString(),
+        vote_type: voteType,
+        project_id: 'project-001',
+      },
+    ]);
+
+    if (error) {
+      console.error('Ошибка при голосовании:', error.message);
+      alert('Ошибка: ' + error.message);
+    } else {
+      alert('Спасибо за голос!');
+      console.log('Голос успешно сохранён:', data);
+    }
   };
 
   return (
@@ -32,7 +52,6 @@ export default function Home() {
       <h1>NoNvme</h1>
       <p>Оцени проект ниже:</p>
 
-      {/* КАРТОЧКА ПРОЕКТА */}
       <div style={{
         border: '1px solid #ccc',
         borderRadius: '10px',
@@ -46,7 +65,6 @@ export default function Home() {
         <p>Описание проекта: кратко и понятно объясняет суть.</p>
       </div>
 
-      {/* КНОПКИ ГОЛОСОВАНИЯ */}
       <div style={{ display: 'flex', gap: '10px' }}>
         <button onClick={() => handleVote('top')} style={{ padding: '10px 20px' }}>Топ проект</button>
         <button onClick={() => handleVote('scam')} style={{ padding: '10px 20px', backgroundColor: '#f66', color: '#fff' }}>Скам</button>
