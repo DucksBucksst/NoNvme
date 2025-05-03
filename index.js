@@ -16,10 +16,34 @@ export default function Home() {
   }, []);
 
   const handleVote = async (voteType) => {
-    if (!tgUser) {
-      alert('Пользователь Telegram не найден.');
-      return;
-    }
+  if (!tgUser) {
+    alert('Пользователь Telegram не найден.');
+    return;
+  }
+
+  console.log('Данные для отправки:', {
+    telegram_id: tgUser.id.toString(),
+    vote_type: voteType,
+    project_id: 'project-001',  // Можно заменить на реальный ID проекта
+  });
+
+  // Отправляем данные в Supabase
+  const { data, error } = await supabase.from('votes').insert([
+    {
+      telegram_id: tgUser.id.toString(),
+      vote_type: voteType,
+      project_id: 'project-001',
+    },
+  ]);
+
+  if (error) {
+    console.error('Ошибка при голосовании:', error.message);
+    alert('Ошибка: ' + error.message);
+  } else {
+    alert('Спасибо за голос!');
+    console.log('Голос успешно сохранён:', data);
+  }
+};
 
     const { data, error } = await supabase.from('votes').insert([
       {
